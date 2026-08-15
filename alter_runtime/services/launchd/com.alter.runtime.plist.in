@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  alter-runtime - ~Alter Identity Runtime (launchd user agent template)
+
+  Install path: ~/Library/LaunchAgents/com.alter.runtime.plist
+
+  Placeholders substituted by alter_runtime.service_install.render_launchd_plist():
+    @ALTER_RUNTIME_BIN@       - absolute path to the `alter-runtime` entry point
+    @ALTER_RUNTIME_LOG_DIR@   - directory for stdout/stderr log files
+    @ALTER_RUNTIME_HOME@      - value of $HOME at install time
+
+  After install, load with:
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.alter.runtime.plist
+    launchctl kickstart -k gui/$(id -u)/com.alter.runtime
+
+  Unload with:
+    launchctl bootout gui/$(id -u)/com.alter.runtime
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.alter.runtime</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>@ALTER_RUNTIME_BIN@</string>
+        <string>daemon</string>
+    </array>
+
+    <!-- Start at login and keep running; restart on crash with a 5-second throttle. -->
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+        <key>Crashed</key>
+        <true/>
+    </dict>
+    <key>ThrottleInterval</key>
+    <integer>5</integer>
+
+    <!-- Tight process-creation mask so sockets / state files land at 0o600. -->
+    <key>Umask</key>
+    <integer>63</integer>
+
+    <!-- Logs land under ~/Library/Logs/alter-runtime/ so macOS Console.app picks them up. -->
+    <key>StandardOutPath</key>
+    <string>@ALTER_RUNTIME_LOG_DIR@/alter-runtime.log</string>
+    <key>StandardErrorPath</key>
+    <string>@ALTER_RUNTIME_LOG_DIR@/alter-runtime.err.log</string>
+
+    <!-- Environment -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>HOME</key>
+        <string>@ALTER_RUNTIME_HOME@</string>
+    </dict>
+
+    <!-- Soft process limits - mirror the systemd unit. ProcessType=Background
+         tells launchd to apply the OS X timer / IO / scheduling defaults for
+         a background daemon (less CPU + IO priority, eligible for App Nap),
+         and LowPriorityIO further drops disk-IO priority so the daemon never
+         starves a foreground IDE / build that the operator is actively using.
+
+         A future revision may ship a sandbox-exec profile alongside this
+         template to further constrain the daemon's runtime surface; the plist
+         is the pre-sandbox security floor. -->
+    <key>ProcessType</key>
+    <string>Background</string>
+    <key>LowPriorityIO</key>
+    <true/>
+
+    <!-- Nice-to-have for GUI sessions: the LaunchAgent inherits the user's
+         Aqua session so the Unix socket at ~/Library/Application Support/alter
+         is writable without extra entitlements. -->
+    <key>LimitLoadToSessionType</key>
+    <array>
+        <string>Aqua</string>
+        <string>Background</string>
+    </array>
+</dict>
+</plist>

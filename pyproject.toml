@@ -1,0 +1,190 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "alter-runtime"
+version = "0.4.13"
+description = "~Alter Identity Runtime - local daemon for the continuous identity field. Subscribes to per-~handle Cloudflare Durable Objects, exposes Unix socket + D-Bus + CLI surfaces, falls back gracefully to direct MCP polling."
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.10"
+keywords = [
+  "alter",
+  "identity",
+  "mcp",
+  "model-context-protocol",
+  "ai-agents",
+  "agent",
+  "llm",
+  "cloudflare",
+  "durable-object",
+  "psychometric",
+  "sovereign-identity",
+  "x402",
+  "verifiable-credentials",
+]
+authors = [
+  { name = "~Alter" },
+  { name = "Alter Meridian Pty Ltd", email = "hello@truealter.com" },
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Framework :: AsyncIO",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Information Technology",
+  "Intended Audience :: System Administrators",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS :: MacOS X",
+  "Operating System :: Microsoft :: Windows",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Security",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: System :: Distributed Computing",
+  "Topic :: System :: Systems Administration :: Authentication/Directory",
+]
+dependencies = [
+  "httpx>=0.26.0",
+  "httpx-sse>=0.4.0",
+  "watchdog>=4.0.0",
+  "pydantic>=2.5.0",
+  "pyyaml>=6.0.1",
+  # Ed25519 frame-signature verification. Only invoked when
+  # ``DaemonConfig.require_frame_signature`` is flipped on; kept in the
+  # base dep set rather than an extra so the enforcement path cannot fail
+  # at import time on a legitimately-configured host.
+  "cryptography>=42.0",
+  # In-process symbol resolution; robust to partially-written files.
+  "tree-sitter>=0.23.0",
+  "tree-sitter-python>=0.23.0",
+  # gitignore pattern matching for WorktreeWatcher
+  # fs-watch flood mitigation (_load_ignore_spec in worktree_watcher.py).
+  # Without this dependency the gitignore filter silently no-ops and every
+  # fs event is forwarded to the bus, flooding the event bus.
+  "pathspec>=0.12.0",
+]
+
+[project.optional-dependencies]
+dbus = [
+  # Async D-Bus bindings for Linux surface adapters
+  "dbus-next>=0.2.3; sys_platform == 'linux'",
+]
+slack = [
+  # Slack SDK for the optional Slack adapter.
+  "slack-sdk>=3.27.0",
+  "slack-bolt>=1.18.0",
+]
+ebpf = [
+  # Kernel-adjacent attestation. The Rust subcrate
+  # will be called out to from the Python core when this extra is installed.
+  "bcc>=0.29.0; sys_platform == 'linux'",
+]
+systemd = [
+  # Socket activation and notify helpers
+  "systemd-python>=235; sys_platform == 'linux'",
+]
+windows = [
+  "pywin32>=306; sys_platform == 'win32'",
+]
+all = [
+  "alter-runtime[dbus,slack,ebpf,systemd,windows]",
+]
+dev = [
+  "pytest>=8.0.0",
+  "pytest-asyncio>=0.23.0",
+  "pytest-cov>=4.1.0",
+  # EXACT, not a floor. A floor makes the lint gate a function of the release
+  # calendar rather than of this repo: CI resolves whatever ruff shipped that
+  # morning, so a tree that passed yesterday goes red today with nothing in the
+  # diff to explain it, and the fix reads as "patch the file ruff now dislikes"
+  # instead of "decide to adopt a new ruff". That happened here: 0.16.0 began
+  # formatting fenced Python inside markdown, so README.md entered the formatter's
+  # file set for the first time and `ruff format --check` failed on a README no
+  # commit had touched. Upgrading is a deliberate, reviewable bump of this line,
+  # carrying whatever reformat the new version wants in the same commit.
+  "ruff==0.15.22",
+  "mypy>=1.10.0",
+  # peer-diagnostic.schema.json validation tests.
+  # Kept in the dev extra (not the base dep set) since the schema is
+  # documentation, not a runtime contract enforced inside the daemon.
+  "jsonschema>=4.21.0",
+]
+
+[project.scripts]
+alter-runtime = "alter_runtime.cli:main"
+
+[project.urls]
+Homepage = "https://truealter.com"
+Documentation = "https://truealter.com/docs/alter-runtime"
+Repository = "https://github.com/true-alter/runtime"
+"Bug Tracker" = "https://github.com/true-alter/runtime/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["alter_runtime"]
+exclude = [
+  "alter_runtime/**/tests",
+  "alter_runtime/**/tests/**",
+  "alter_runtime/validator_device_key.py",
+]
+
+[tool.hatch.build.targets.wheel.force-include]
+"alter_runtime/services/systemd/alter-runtime.service.in" = "alter_runtime/services/systemd/alter-runtime.service.in"
+"alter_runtime/services/launchd/com.alter.runtime.plist.in" = "alter_runtime/services/launchd/com.alter.runtime.plist.in"
+
+[tool.hatch.build.targets.sdist]
+# Strict allow-list: only these paths enter the source distribution. Anything
+# not named here is excluded by construction, so no sibling tooling or local
+# working files can leak into a published artefact.
+only-include = [
+  "alter_runtime",
+  "README.md",
+  "CHANGELOG.md",
+  "LICENSE",
+  "pyproject.toml",
+]
+exclude = [
+  ".gitignore",
+  "alter_runtime/validator_device_key.py",
+]
+
+# Hatchling force-includes the repo .gitignore into the sdist (a VCS exclusion
+# file), which bypasses the exclude list above. This hook drops it so the local
+# ignore file never ships in the published artefact.
+[tool.hatch.build.targets.sdist.hooks.custom]
+path = "hatch_build.py"
+
+# --- Ruff ----------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+# A pragmatic ruleset for this package. The stricter select =
+# ["E","F","W","I","N","B","UP","ANN","S","RUF"] previously used here was
+# dropped so it would not block shipping until hand-annotations caught up.
+# Re-tighten package-by-package in a later hygiene pass rather than
+# front-loading it onto the current release.
+select = ["E", "F", "W", "I"]
+
+# --- MyPy ----------------------------------------------------------------
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+# --- Pytest --------------------------------------------------------------
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra -q --strict-markers"
+testpaths = ["tests"]
+# Repo root on sys.path so the local-only test-support tree (outside the
+# published package, excluded from wheel + sdist by omission) is importable
+# when the suite exercises those modules directly.
+pythonpath = ["."]
+asyncio_mode = "auto"

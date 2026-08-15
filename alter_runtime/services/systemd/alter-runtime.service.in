@@ -1,0 +1,105 @@
+#
+# alter-runtime - ~Alter Identity Runtime (systemd user unit template)
+#
+# Install path: ~/.config/systemd/user/alter-runtime.service
+#
+# Placeholders substituted by alter_runtime.service_install.render_systemd_unit():
+#   @ALTER_RUNTIME_BIN@   - absolute path to the `alter-runtime` entry point
+#   @ALTER_RUNTIME_HOME@  - value of $HOME at install time (for Environment=)
+#
+# After install, enable with:
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now alter-runtime.service
+#
+# Logs: journalctl --user -u alter-runtime -f
+#
+
+[Unit]
+Description=~Alter Identity Runtime - local sovereign daemon
+Documentation=https://github.com/true-alter/alter-runtime/blob/main/README.md
+# We do not require network-online.target because the daemon tolerates
+# offline starts - it degrades to its local cache and retries the DO
+# connection with exponential backoff.
+#
+# Deliberately NO After=default.target. This unit is WantedBy=default.target,
+# so ordering it after that target closes a loop: the target pulls the daemon
+# in, the daemon waits for the target, and every unit ordered after the daemon
+# inherits the cycle. systemd breaks such a cycle by DELETING a start job, and
+# reports it once at login and never again, so the loss reads as silence: a unit
+# ordered after this one can stay stopped for weeks with nothing to say so.
+# basic.target already orders this daemon correctly through the implicit default
+# dependencies for user services.
+# Cap restart storms during a bad deploy, WITHOUT wedging on a burst that is
+# not a crash loop. StartLimit* keys live on [Unit] (not [Service]) per
+# systemd.unit(5).
+#
+# systemd counts EXTERNAL `systemctl restart` calls toward this limit, not only
+# crashes, and once the limit trips the unit stays `failed` until a human runs
+# `reset-failed`. At 5-in-60s that made a burst of ordinary restarts fatal:
+# seven restarts inside about forty seconds is enough to leave the daemon dead
+# for hours. Nothing goes red when this happens, because a wedged unit is
+# silent, so it is found only when something that needed the daemon fails.
+#
+# 30-in-300s keeps the crash-loop guard it was there for while tolerating a
+# burst that is merely noisy. A genuine crash loop restarts every RestartSec=5s,
+# so it reaches 30 starts in about two and a half minutes and still trips well
+# inside the window. A burst of external restarts does not.
+StartLimitIntervalSec=300
+StartLimitBurst=30
+
+[Service]
+Type=exec
+ExecStart=@ALTER_RUNTIME_BIN@ daemon
+Restart=on-failure
+RestartSec=5s
+
+# Environment
+Environment=HOME=@ALTER_RUNTIME_HOME@
+# PATH: include ~/.local/bin (default alter CLI install) and ~/.bun/bin (bun-
+# installed binaries) so SessionRefresher can locate `alter creds refresh`
+# without requiring ALTER_CLI_BIN to be set. ProtectHome=read-only still
+# permits PATH entries; the restriction governs write access, not execution.
+Environment=PATH=%h/.local/bin:%h/.bun/bin:/usr/local/bin:/usr/bin:/bin
+# XDG_RUNTIME_DIR is set by pam_systemd on interactive logins; for headless
+# sessions we let the daemon fall back to the per-uid /tmp path via
+# alter_runtime.config.unix_socket_path().
+
+# Keep stdout/stderr on the journal so `journalctl --user -u alter-runtime`
+# gives the operator immediate visibility.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=alter-runtime
+
+# Process hygiene - run as the invoking user (implicit for user units),
+# with a tight umask so newly created socket / state files stay 0o600.
+UMask=0077
+
+# Resource limits - the daemon holds one httpx connection + small state
+# caches. Everything else is defensive.
+LimitNOFILE=1024
+MemoryMax=256M
+# 512, not 64: the daemon's steady state is ~30 DO subscribers plus a
+# working-tree watch pass over every worktree, which on an active dev machine
+# runs to ~130 tasks. A cap of 64 let the watcher die with "can't start new
+# thread", tripping StartLimit and crash-looping the whole daemon. 512 keeps a
+# bounded fork-bomb guard (well under systemd's DefaultTasksMax) with headroom.
+TasksMax=512
+
+# Hardening (works across systemd ≥ 240, which every supported distro ships)
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=%h/.config/alter %h/.cache/alter %h/.local/state/alter %h/.local/state/alter-runtime %h/.local/share/alter-runtime %h/.local/share/org-alter %t
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+[Install]
+WantedBy=default.target
