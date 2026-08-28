@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="668" height="472" viewBox="0 0 668 472" role="img" aria-label="alter-runtime status">
+<rect x="19.1" y="18.85" width="629.8" height="432" rx="12" fill="#0a0c12" opacity="0.033"/>
+<rect x="18.2" y="19.7" width="631.6" height="432" rx="13" fill="#0a0c12" opacity="0.033"/>
+<rect x="17.3" y="20.55" width="633.4" height="432" rx="14" fill="#0a0c12" opacity="0.033"/>
+<rect x="16.4" y="21.4" width="635.2" height="432" rx="15" fill="#0a0c12" opacity="0.033"/>
+<rect x="15.5" y="22.25" width="637.0" height="432" rx="16" fill="#0a0c12" opacity="0.033"/>
+<rect x="14.6" y="23.1" width="638.8" height="432" rx="17" fill="#0a0c12" opacity="0.033"/>
+<rect x="13.7" y="23.95" width="640.6" height="432" rx="18" fill="#0a0c12" opacity="0.033"/>
+<rect x="12.8" y="24.8" width="642.4" height="432" rx="19" fill="#0a0c12" opacity="0.033"/>
+<rect x="11.9" y="25.65" width="644.2" height="432" rx="20" fill="#0a0c12" opacity="0.033"/>
+<rect x="11.0" y="26.5" width="646.0" height="432" rx="21" fill="#0a0c12" opacity="0.033"/>
+<rect x="10.1" y="27.35" width="647.8" height="432" rx="22" fill="#0a0c12" opacity="0.033"/>
+<rect x="9.2" y="28.2" width="649.6" height="432" rx="23" fill="#0a0c12" opacity="0.033"/>
+<rect x="20" y="16" width="628" height="432" rx="11" fill="#14161f"/>
+<path d="M20 27a11 11 0 0 1 11-11h606a11 11 0 0 1 11 11v25H20z" fill="#20232f"/>
+<line x1="20" y1="52" x2="648" y2="52" stroke="#2c3040" stroke-width="1"/>
+<text x="42" y="37" fill="#a2a9c0" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="11.5">alter-runtime status</text>
+<text x="40" y="78.0" fill="#C9A84C" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="12.5" font-weight="600" xml:space="preserve">$ alter-runtime status</text>
+<text x="40" y="98.5" fill="#e8ebf2" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="12.5" font-weight="400" xml:space="preserve"></text>
+<text x="40" y="119.0" fill="#e8ebf2" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="12.5" font-weight="400" xml:space="preserve">unix socket:     /run/user/1000/alter.sock</text>
+<text x="40" y="139.5" fill="#e8ebf2" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="12.5" font-weight="400" xml:space="preserve">  state:         </text>
+<text x="171.58" y="139.5" fill="#a2a9c0" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="12.5" xml:space="preserve">present</text>
+<text x="40" y="160.0" fill="#e8ebf2" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="12.5" font-weight="400" xml:space="preserve">keypair:         /home/you/.config/alter/keypair.json</text>
+<text x="40" y="180.5" fill="#e8ebf2" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="12.5" font-weight="400" xml:space="preserve">  state:         </text>
+<text x="171.58" y="180.5" fill="#a2a9c0" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="12.5" xml:space="preserve">present</text>
+<text x="40" y="201.0" fill="#e8ebf2" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="12.5" font-weight="400" xml:space="preserve">session:         handle=~yourhandle tier=L4</text>
+<text x="40" y="221.5" fill="#e8ebf2" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="12.5" font-weight="400" xml:space="preserve">  api:           </text>
+<text x="171.58" y="221.5" fill="#a2a9c0" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="12.5" xml:space="preserve">https://api.truealter.com</text>
+<text x="40" y="242.0" fill="#e8ebf2" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="12.5" font-weight="400" xml:space="preserve">  expires:       </text>
+<text x="171.58" y="242.0" fill="#a2a9c0" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="12.5" xml:space="preserve">2026-09-14T09:12:04.000Z</text>
+<text x="40" y="262.5" fill="#e8ebf2" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="12.5" font-weight="400" xml:space="preserve">config:          /home/you/.config/alter/runtime.yaml</text>
+<text x="40" y="283.0" fill="#e8ebf2" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="12.5" font-weight="400" xml:space="preserve">  do_sse:        </text>
+<text x="171.58" y="283.0" fill="#a2a9c0" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="12.5" xml:space="preserve">https://mcp.truealter.com/events/{handle}/stream</text>
+<text x="40" y="303.5" fill="#e8ebf2" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="12.5" font-weight="400" xml:space="preserve">  mcp_fallback:  </text>
+<text x="171.58" y="303.5" fill="#a2a9c0" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="12.5" xml:space="preserve">https://api.truealter.com/api/v1/mcp</text>
+<text x="40" y="324.0" fill="#e8ebf2" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="12.5" font-weight="400" xml:space="preserve">  log_level:     </text>
+<text x="171.58" y="324.0" fill="#a2a9c0" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="12.5" xml:space="preserve">INFO</text>
+<text x="40" y="344.5" fill="#e8ebf2" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="12.5" font-weight="400" xml:space="preserve">service unit:    /home/you/.config/systemd/user/alter-runtime.service</text>
+<text x="40" y="365.0" fill="#e8ebf2" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="12.5" font-weight="400" xml:space="preserve">  platform:      </text>
+<text x="171.58" y="365.0" fill="#a2a9c0" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="12.5" xml:space="preserve">linux</text>
+<text x="40" y="385.5" fill="#e8ebf2" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="12.5" font-weight="400" xml:space="preserve">  installed:     </text>
+<text x="171.58" y="385.5" fill="#a2a9c0" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="12.5" xml:space="preserve">True</text>
+<text x="40" y="406.0" fill="#e8ebf2" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="12.5" font-weight="400" xml:space="preserve">  active:        </text>
+<text x="171.58" y="406.0" fill="#a2a9c0" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace" font-size="12.5" xml:space="preserve">True (active)</text>
+<rect x="20" y="16" width="628" height="432" rx="11" fill="none" stroke="#2c3040" stroke-width="1"/>
+</svg>
