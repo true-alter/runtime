@@ -47,7 +47,11 @@ transform with two independent enforcement layers:
    (``**row``) - means an unexpected extra key raises ``ValidationError``
    at construction time instead of silently forwarding.
 
-See ``tests/test_loom_verdict_exporter.py`` for the leak-guard assertions.
+Both layers catch an unexpected KEY. Neither catches a substituted
+VALUE: assigning a free-text row field to a wire field that already
+exists constructs cleanly and ships. Keep the reads in layer 1 explicit,
+and never add a wire field without the check that its source cannot be
+free text.
 
 Cross-platform
 --------------
@@ -175,13 +179,9 @@ def derive_concern_ref(concern: str, *, salt: str | None = None) -> str:
     same ref across every machine in the feed, and a per-host salt would
     silently break that correlation while still looking healthy locally.
 
-    Be honest about what the salt does and does not buy. With an empty
-    salt (the default) this value is OBFUSCATION, not secrecy: the space
-    of loom concern names is small and enumerable, so anyone holding the
-    feed can brute-force the preimage of a given ref. A non-empty shared
-    salt raises that bar meaningfully. The COLLISION FIX holds either
-    way, because it depends only on distinct concerns deriving distinct
-    refs, which is true regardless of whether the salt is set.
+    Set a salt. Distinct concerns derive distinct refs with or without
+    one, so correlation holds either way, but the ref is only as private
+    as the salt behind it.
     """
     effective_salt = concern_ref_salt() if salt is None else salt
     material = f"{_CONCERN_REF_DOMAIN}:{effective_salt}:{concern}"
@@ -210,7 +210,7 @@ def iter_store_row_paths(store_dir: Path) -> "Iterator[Path]":
     concerns (``loom:``, ``frontend-verify:``) under a per-worktree
     subdirectory and leaves only globally-scoped rows at the root. A
     root-only ``glob("*.json")`` therefore stops seeing loom rows the
-    moment the validator writes from a worktree, which is every skein.
+    moment the validator writes from a worktree, which is the usual case.
 
     That is not hypothetical. A root-only glob held a handful of stale rows
     while thousands of current ones sat one level down, and nothing errored,
@@ -489,9 +489,9 @@ class LoomVerdictExporter(Component):
         logger.error(
             "loom_verdict_exporter: verdict export REFUSED %d times in a row "
             "(status=%d) for kid=%s. The cross-machine verdict feed is DOWN. "
-            "Retrying cannot fix this: the kid has to be in the "
-            "LOOM_VALIDATOR_KID allowlist on alter-api, which is an admin "
-            "change. Suspending export for %.0fs.",
+            "Retrying cannot fix this: this key is not accepted for export, "
+            "which the service operator has to change. Suspending export "
+            "for %.0fs.",
             self._refusal_streak,
             status_code,
             kid,
@@ -503,18 +503,10 @@ class LoomVerdictExporter(Component):
             return self._session_ref.current
         return self._session
 
-    # ``_producer_id(session)`` used to derive this identifier from the
-    # SESSION signing key. It is gone rather than retained: the whole point
-    # of the validator device key is that the session key no longer speaks
-    # for this device, and a helper that still reads it is an invitation to
-    # wire the defect back in. ``producer_id`` is now derived in
-    # :meth:`_poll_once` from the validator key that actually signs.
-    #
-    # For the record, unchanged: the backend derives ``producer_id``
-    # server-side from the VERIFIED signing key and ignores any
-    # caller-supplied value. We send our own key identity for schema
-    # compatibility and forward honesty; the served value is authoritative
-    # regardless.
+    # ``producer_id`` is derived in :meth:`_poll_once` from the validator
+    # key that actually signs, never from the session key. The service
+    # derives it from the verified signing key and ignores the value a
+    # caller sends, which is carried for schema compatibility only.
 
     # ------------------------------------------------------------------
     # Component lifecycle
@@ -684,9 +676,8 @@ class LoomVerdictExporter(Component):
 
         # Sign with this device's purpose-scoped validator key, NOT the
         # session key. The session key is re-minted by every `alter login`,
-        # which silently moves the kid out of the backend's
-        # LOOM_VALIDATOR_KID allowlist and kills the feed until someone
-        # edits a production secret. The validator key never moves.
+        # so a signature carrying it stops verifying. The validator key is
+        # stable for the life of the device.
         jws = build_invocation_signature_with_key(
             pem=validator.pem,
             kid=validator.kid,
@@ -741,9 +732,8 @@ class LoomVerdictExporter(Component):
             do_reason = do_body.get("error") if isinstance(do_body, dict) else None
 
             if do_reason == _DO_NONCE_REPLAY_ERROR:
-                # The DO's nonce is content-addressed
-                # (`derive_nonce(handle, f"{concern_ref}:{basis_hash}:{verdict}",
-                # ...)`, backend `producer.py`), so this specific rejection
+                # The DO derives its nonce from the content of the row, so
+                # this specific rejection
                 # means the DO already holds this exact (concern, basis_hash,
                 # verdict) - a genuine retry of unchanged content, not a
                 # refusal of anything new. The cursor only tracks

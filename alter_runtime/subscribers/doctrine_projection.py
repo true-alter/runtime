@@ -1,5 +1,5 @@
 """DoctrineProjectionPoller - maintains a local read-only JSONL projection of
-the member's doctrine substrate, per scope.
+the member's doctrine store, per scope.
 
 Why this exists
 ---------------

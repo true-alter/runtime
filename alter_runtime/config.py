@@ -690,10 +690,10 @@ class DaemonConfig:
     # (the server-side keepalive interval),
     # so this value MUST exceed the keepalive interval - otherwise the stall
     # watchdog fires before any keepalive arrives, every connection is treated
-    # as stalled, and the daemon enters a tight reconnect loop (~4s/cycle =
-    # ~21,600 reconnects/day per handle, observed 2026-04-29 as 139k/day across
-    # two handles). 75s = 3× keepalive, absorbing one missed ping plus
-    # clock skew. If the SSE_PING_INTERVAL_MS server constant is changed,
+    # as stalled, and the daemon enters a tight reconnect loop of roughly one
+    # cycle every four seconds, which is tens of thousands of reconnects a day
+    # for a single handle. 75s is three times the keepalive, absorbing one
+    # missed ping plus clock skew. If the server's keepalive interval changes,
     # this floor must be re-derived.
     mcp_fallback_endpoint: str = "https://api.truealter.com/api/v1/mcp"
     fallback_poll_interval_seconds: float = 30.0
@@ -836,7 +836,7 @@ class DaemonConfig:
     #: dropped with a structured warning log; counters on the subscriber's
     #: :class:`_ConnectionState` record each drop class.
     #:
-    #: Default is ``True`` post-pentest 2026-04-26 - operators must now
+    #: Default is ``True``: operators must
     #: deliberately disable enforcement (``ALTER_RUNTIME_REQUIRE_FRAME_SIG=0``)
     #: rather than silently inheriting the migration-window pass-through. The
     #: subscriber refuses to construct when enforcement is on without a pinned
@@ -889,7 +889,7 @@ class DaemonConfig:
     # --- Doctrine projection poller --------------------------------------
     #: Master toggle for :class:`DoctrineProjectionPoller`. When enabled (the
     #: default) the daemon maintains a local read-only JSONL projection of the
-    #: member's doctrine substrate per scope (``personal`` / ``collective``)
+    #: member's doctrine store per scope (``personal`` / ``collective``)
     #: under :func:`doctrine_projection_dir`. Pull-mode (the backend emits no
     #: event on a doctrine write): the poller calls ``alter_doctrine``'s cheap
     #: ``summary`` verb each tick and only pulls the ``list`` delta when the
@@ -1130,7 +1130,7 @@ class DaemonConfig:
             config.enable_claude_jsonl_watcher = True
         elif _cjw_flag in ("0", "false", "no", "off"):
             config.enable_claude_jsonl_watcher = False
-        # Post-pentest-2026-04-26: default is True. Env var still toggles -
+        # Default is True. Env var still toggles -
         # explicit "0"/"false"/"no"/"off" disables (migration-window opt-out),
         # everything else (including unset) keeps the default True.
         #

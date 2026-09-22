@@ -331,19 +331,18 @@ async def run_daemon(config: DaemonConfig | None = None) -> None:
     # that need it are only registered when session is not None anyway.
     session_ref: SessionRef | None = SessionRef(session) if session is not None else None
 
-    # Build the shared RefreshTrigger (2026-07-12 fix, extended 2026-07-16 to
-    # cover DoSseSubscriber). Every hot JWT consumer that accepts a
+    # Build the shared RefreshTrigger. Every hot JWT consumer that accepts a
     # refresh_trigger constructor argument (DoSseSubscriber, DaemonCapCache,
     # SessionPresenceWriter, ActiveSessionsDoPublisher, SessionClaimsDoPublisher)
     # calls request_refresh() on an auth failure that implies the session JWT
     # itself is dead, waking SessionRefresher's sleep early instead of
-    # waiting for its scheduled lead time. Closes the 66-minute daemon
-    # backoff spiral seen after a server-side session revoke landed well
-    # before the next scheduled proactive rotation. This set is pinned by
-    # tests/test_daemon_refresh_trigger_wiring.py, which fails whenever a
-    # class that declares a refresh_trigger parameter is registered below
-    # without actually being passed one - do_sse's own omission (this fix)
-    # is exactly the drift that test now catches mechanically.
+    # waiting for its scheduled lead time. Without this, a server-side
+    # session revoke can strand the daemon in an exponential backoff spiral
+    # for the whole gap before the next scheduled proactive rotation. A
+    # mechanical drift guard fails whenever a class that declares a
+    # refresh_trigger parameter is registered below without actually being
+    # passed one - a component gaining the parameter but never being wired
+    # to it is exactly the drift that guard catches.
     from alter_runtime.subscribers.session_refresher import RefreshTrigger
 
     # Auth health. The daemon already observes every authenticated outcome it
@@ -382,11 +381,11 @@ async def run_daemon(config: DaemonConfig | None = None) -> None:
         # Passed session_ref (not the frozen session) so a proactive or
         # reactive rotation actually propagates to this subscriber's next
         # reconnect, plus refresh_trigger so a bearer 401 on the stream
-        # itself wakes SessionRefresher out of band (2026-07-16 fix; without
-        # session_ref, refresh_trigger alone would wake the refresher but
-        # this subscriber could never observe the rotated token, since
-        # ``_get_session()`` only reads through a live SessionRef when one
-        # was actually passed at construction).
+        # itself wakes SessionRefresher out of band. Without session_ref,
+        # refresh_trigger alone would wake the refresher but this subscriber
+        # could never observe the rotated token, since ``_get_session()``
+        # only reads through a live SessionRef when one was actually passed
+        # at construction.
         supervisor.register(
             DoSseSubscriber(
                 config, session_ref or session, event_bus, refresh_trigger=refresh_trigger
@@ -398,7 +397,7 @@ async def run_daemon(config: DaemonConfig | None = None) -> None:
         # its ``_live_session = self._session_ref.current if ... else
         # self._session`` read-through), so a frozen snapshot here means a
         # proactive or reactive rotation never reaches it and it keeps
-        # polling with the boot-time JWT forever (2026-07-16 fix).
+        # polling with the boot-time JWT forever.
         supervisor.register(McpFallbackSubscriber(config, session_ref or session, event_bus))
 
         # AttunementRefresher closes the steady-state gap: the MCP fallback
@@ -409,14 +408,14 @@ async def run_daemon(config: DaemonConfig | None = None) -> None:
         # ``attunement_transition`` identity.event that the CacheWriter
         # projects into ``identity.json``. It shares only the read-side MCP
         # wire contract with the fallback; it does NOT touch do_sse's
-        # connect/auth/mint path. Disable via ALTER_RUNTIME_ATTUNEMENT_REFRESH=0.
+        # own connection handling. Disable via ALTER_RUNTIME_ATTUNEMENT_REFRESH=0.
         # Passed session_ref (not the frozen session) for the same
-        # read-through reason as McpFallbackSubscriber above (2026-07-16 fix).
+        # read-through reason as McpFallbackSubscriber above.
         if config.attunement_refresh_enabled:
             supervisor.register(AttunementRefresher(config, session_ref or session, event_bus))
 
         # DoctrineProjectionPoller maintains a local read-only JSONL projection
-        # of the member's doctrine substrate per scope (personal/collective)
+        # of the member's doctrine store per scope (personal/collective)
         # under ~/.local/share/alter/doctrine. Pull-mode: the backend emits no
         # event on a doctrine write, so it polls the cheap ``alter_doctrine``
         # ``summary`` verb each tick and only pulls the ``list`` delta when the
@@ -499,9 +498,9 @@ async def run_daemon(config: DaemonConfig | None = None) -> None:
         # No bus coupling; the handoff is file-mediated. Passed session_ref
         # (not the frozen session) so a rotation propagates here too, plus
         # refresh_trigger so a capability request 401 wakes SessionRefresher out of
-        # band instead of waiting for its schedule (2026-07-12 fix — this
-        # subscriber previously held the boot-time JWT forever regardless of
-        # SessionRefresher's own rotations).
+        # band instead of waiting for its schedule - this subscriber would
+        # otherwise hold the boot-time JWT forever regardless of
+        # SessionRefresher's own rotations.
         supervisor.register(
             SessionPresenceWriter(config, session_ref or session, refresh_trigger=refresh_trigger)
         )
@@ -534,7 +533,7 @@ async def run_daemon(config: DaemonConfig | None = None) -> None:
         # written by ActiveSessionsWriter and POSTs each new envelope to
         # ``{do_publish_url}/events/{handle}/sessions/ingest``. Passed
         # session_ref + refresh_trigger for the same reactive-rotation
-        # reason as SessionPresenceWriter above (2026-07-12 fix).
+        # reason as SessionPresenceWriter above.
         supervisor.register(
             ActiveSessionsDoPublisher(
                 config, session_ref or session, refresh_trigger=refresh_trigger
@@ -605,7 +604,7 @@ async def run_daemon(config: DaemonConfig | None = None) -> None:
                 # session_ref + refresh_trigger flow only into the lazily-
                 # constructed DaemonCapCache (_ensure_cap_cache); `session`
                 # keeps its existing frozen-snapshot meaning for `whoami`
-                # and `send` unaffected (2026-07-12 fix).
+                # and `send` unaffected.
                 session_ref=session_ref,
                 refresh_trigger=refresh_trigger,
                 auth_health=auth_health,

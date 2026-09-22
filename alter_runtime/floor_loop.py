@@ -70,9 +70,9 @@ logger = logging.getLogger("alter_runtime.floor_loop")
 # Safety-critical comms allowlist
 # ---------------------------------------------------------------------------
 #
-# The MCP surface preflight MUST permit ``alter_ingest`` and
-# ``alter_escalations`` calls when the payload carries ``urgency: critical``,
-# even below floor. Floor MUST NOT block emergency comms.
+# The MCP surface preflight MUST permit the org connector's ingest and
+# escalation calls when the payload carries ``urgency: critical``, even
+# below floor. Floor MUST NOT block emergency comms.
 #
 # The local Unix-socket surface speaks JSON-RPC, not MCP. The closest
 # faithful carry-over is:
